@@ -58,13 +58,12 @@ func generateCompanionEphemeralKey(linkCode ...string) (ephemeralKeyPair *keys.K
 	ephemeralKeyPair = keys.NewKeyPair()
 	salt := random.Bytes(32)
 	iv := random.Bytes(16)
-	var linkingCodeBytes []byte
-	if len(linkCode) > 0 {
-		linkingCodeBytes = []byte(linkCode[0])
+	if len(linkCode) > 0 && len(linkCode[0]) > 0 {
+		encodedLinkingCode = linkCode[0]
 	} else {
-		linkingCodeBytes = random.Bytes(5)
+		linkingCodeBytes := random.Bytes(5)
+		encodedLinkingCode = linkingBase32.EncodeToString(linkingCodeBytes)
 	}
-	encodedLinkingCode = linkingBase32.EncodeToString(linkingCodeBytes)
 	linkCodeKey := pbkdf2.Key([]byte(encodedLinkingCode), salt, 2<<16, 32, sha256.New)
 	linkCipherBlock, _ := aes.NewCipher(linkCodeKey)
 	encryptedPubkey := ephemeralKeyPair.Pub[:]
@@ -92,7 +91,7 @@ func generateCompanionEphemeralKey(linkCode ...string) (ephemeralKeyPair *keys.K
 // (the server will validate it and return 400 if it's wrong).
 //
 // See https://faq.whatsapp.com/1324084875126592 for more info
-func (cli *Client) PairPhone(ctx context.Context, phone string, showPushNotification bool, clientType PairClientType, clientDisplayName string,linkCode ...string) (string, error) {
+func (cli *Client) PairPhone(ctx context.Context, phone string, showPushNotification bool, clientType PairClientType, clientDisplayName string, linkCode ...string) (string, error) {
 	if cli == nil {
 		return "", ErrClientIsNil
 	}
